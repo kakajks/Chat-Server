@@ -12,25 +12,24 @@ public class Server {
 
 	ServerSocket server;
 	ArrayList<PrintWriter> list_clientWriter;
-	
-	HashMap<Socket, String>logged = new HashMap<>();
+
+	HashMap<Socket, String> logged = new HashMap<>();
 	final int LEVEL_ERROR = 1;
 	final int LEVEL_NORMAL = 0;
-	
-	
+
 	public static void main(String[] args) {
-		MySQL.connect();
+		// MySQL.connect();
 		Server s = new Server();
-		if(s.runServer()) {
+		if (s.runServer()) {
 			s.Clientjoin();
 		}
-		
-		
+
 	}
-	public class ClientHandler implements Runnable{
+
+	public class ClientHandler implements Runnable {
 		Socket client;
 		BufferedReader reader;
-		
+
 		public ClientHandler(Socket client) {
 			try {
 				this.client = client;
@@ -41,6 +40,7 @@ public class Server {
 				e.printStackTrace();
 			}
 		}
+
 		@Override
 		public void run() {
 			String nachricht;
@@ -54,21 +54,21 @@ public class Server {
 							String msg = nachricht.substring(6, nachricht.length());
 							String[] log = msg.split(":");
 
-							if(MySQLPoints.getCode(log[0].toLowerCase()).equals(log[1])) {
+//							if(MySQLPoints.getCode(log[0].toLowerCase()).equals(log[1])) {
 
 								PrintWriter writer = new PrintWriter(client.getOutputStream());
 								writer.println("true");
 								writer.flush();
 								logged.put(client,log[0]);
 								list_clientWriter.add(writer);
-								appendTextToConsole(log[0]+ " joined!", LEVEL_ERROR);
-								sendToAllClient(" joined!",client);
+								appendTextToConsole(log[0]+ " joined the Chat!", LEVEL_ERROR);
+								sendToAllClient(log[0]+" joined the Chat!");
 								sendToAllOnline();
-							}else {
-								PrintWriter writer = new PrintWriter(client.getOutputStream());
-								writer.println("false");
-								writer.flush();
-							}
+//							}else {
+//								PrintWriter writer = new PrintWriter(client.getOutputStream());
+//								writer.println("false");
+//								writer.flush();
+//							}
 						}else {
 						PrintWriter writer = new PrintWriter(client.getOutputStream());
 						writer.println("Du bist nicht eingeloggt!");
@@ -77,99 +77,105 @@ public class Server {
 					}
 				}
 				
-			} catch (IOException e) {
+			}catch(
 
-				System.out.println("Client disconnected");
+		IOException e)
+		{
+
+				appendTextToConsole(logged.get(client)+ " left the Chat!", LEVEL_ERROR);
+				sendToAllClient(logged.get(client)+" left the Chat!");
+				logged.remove(client);
 				sendToAllOnline();
 
-			}
-			
-		}
-		
-		
-		
-	}
-	public void Clientjoin() {
-		while(true) {
-			try {
 				
+		}
+
+	}
+
+	}
+
+	public void Clientjoin() {
+		while (true) {
+			try {
+
 				Socket client = server.accept();
 				Thread clientThread = new Thread(new ClientHandler(client));
 				clientThread.start();
-				
+
 			} catch (IOException e) {
 				// TODO: handle exception
 				e.printStackTrace();
 			}
 		}
-		
-		
+
 	}
-	public void sendToAllOnline(){
+
+	public void sendToAllOnline() {
 		String online = "Online;";
-		for(Socket clients : logged.keySet()) {
-			online += logged.get(clients)+",";
+		for (Socket clients : logged.keySet()) {
+			online += logged.get(clients) + ",";
 		}
 		sendToAllClient(online);
 	}
+
 	public void sendToAllClient(String nachricht) {
 		@SuppressWarnings("rawtypes")
 		Iterator it = list_clientWriter.iterator();
-		
-		while(it.hasNext()) {
-			PrintWriter writer = (PrintWriter)it.next();
+
+		while (it.hasNext()) {
+			PrintWriter writer = (PrintWriter) it.next();
 			writer.println(nachricht);
 			writer.flush();
 		}
 	}
+
 	public void sendToAllClient(String nachricht, Socket client) {
 		@SuppressWarnings("rawtypes")
 		Iterator it = list_clientWriter.iterator();
 		String msg = "";
-		
-			if(logged.containsKey(client)) {
-				msg += logged.get(client)+": ";
-			}
+
+		if (logged.containsKey(client)) {
+			msg += logged.get(client) + ": ";
+		}
 		msg += nachricht;
-		while(it.hasNext()) {
-			PrintWriter writer = (PrintWriter)it.next();
+		while (it.hasNext()) {
+			PrintWriter writer = (PrintWriter) it.next();
 			writer.println(msg);
 			writer.flush();
 		}
-		
+
 	}
+
 	public boolean runServer() {
 		try {
 			server = new ServerSocket(333);
 			appendTextToConsole("Server wurde gestartet!", LEVEL_ERROR);
-			
+
 			list_clientWriter = new ArrayList<PrintWriter>();
 			return true;
 		} catch (IOException e) {
 			// TODO: handle exception
-			
+
 			appendTextToConsole("Server konnte nicht gestartet werden!", LEVEL_ERROR);
 
 			e.printStackTrace();
 			return false;
 		}
-		
-		
+
 	}
+
 	public void appendTextToConsole(String message, int level) {
-		if(level == LEVEL_ERROR) {
-			System.err.println(message+ "\n");  
-			
-		}else {
-			System.out.println(message+"\n");
+		if (level == LEVEL_ERROR) {
+			System.err.println(message + "\n");
+
+		} else {
+			System.out.println(message + "\n");
 		}
-		
+
 	}
-	
-	
-	
-public enum ClientState{
-	Login,Chat;
-}
+
+	public enum ClientState {
+		Login, Chat;
+	}
 
 }
