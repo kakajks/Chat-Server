@@ -18,7 +18,7 @@ public class Server {
 	final int LEVEL_NORMAL = 0;
 
 	public static void main(String[] args) {
-		// MySQL.connect();
+		MySQL.connect();
 		Server s = new Server();
 		if (s.runServer()) {
 			s.Clientjoin();
@@ -48,13 +48,23 @@ public class Server {
 				
 				while((nachricht = reader.readLine()) != null) {
 					if(logged.containsKey(client)) {
+					if(nachricht.startsWith("@")) {
+						for(Socket clients : logged.keySet()) {
+							String clientname =nachricht.split(" ")[0].substring(1);
+							if(logged.get(clients).equalsIgnoreCase(clientname)) {
+								sendToClient(nachricht, client, clients);								
+							}
+
+						}
+					}else {
 						sendToAllClient(nachricht,client);
+					}
 					}else {
 						if(nachricht.startsWith("login;")) {
 							String msg = nachricht.substring(6, nachricht.length());
 							String[] log = msg.split(":");
 
-//							if(MySQLPoints.getCode(log[0].toLowerCase()).equals(log[1])) {
+							if(MySQLPoints.getCode(log[0].toLowerCase()).equals(log[1])) {
 
 								PrintWriter writer = new PrintWriter(client.getOutputStream());
 								writer.println("true");
@@ -64,11 +74,11 @@ public class Server {
 								appendTextToConsole(log[0]+ " joined the Chat!", LEVEL_ERROR);
 								sendToAllClient(log[0]+" joined the Chat!");
 								sendToAllOnline();
-//							}else {
-//								PrintWriter writer = new PrintWriter(client.getOutputStream());
-//								writer.println("false");
-//								writer.flush();
-//							}
+						}else {
+								PrintWriter writer = new PrintWriter(client.getOutputStream());
+								writer.println("false");
+								writer.flush();
+							}
 						}else {
 						PrintWriter writer = new PrintWriter(client.getOutputStream());
 						writer.println("Du bist nicht eingeloggt!");
@@ -112,9 +122,11 @@ public class Server {
 
 	public void sendToAllOnline() {
 		String online = "Online;";
+		
 		for (Socket clients : logged.keySet()) {
 			online += logged.get(clients) + ",";
 		}
+		
 		sendToAllClient(online);
 	}
 
@@ -129,6 +141,33 @@ public class Server {
 		}
 	}
 
+
+	public void sendToClient(String nachricht, Socket client, Socket To) {
+		
+		
+		String msg = "";
+
+		if (logged.containsKey(client)) {
+			msg += "["+logged.get(client) + "->"+logged.get(To)+"] ";
+		}
+		msg += nachricht.substring(1);
+			PrintWriter writer;
+			try {
+				writer = new PrintWriter(To.getOutputStream());
+				writer.println(msg);
+				writer.flush();
+
+				writer = new PrintWriter(client.getOutputStream());
+				writer.println(msg);
+				writer.flush();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		
+		
+
+	}
 	public void sendToAllClient(String nachricht, Socket client) {
 		@SuppressWarnings("rawtypes")
 		Iterator it = list_clientWriter.iterator();
