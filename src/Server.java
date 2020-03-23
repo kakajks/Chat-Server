@@ -48,17 +48,20 @@ public class Server {
 				
 				while((nachricht = reader.readLine()) != null) {
 					if(logged.containsKey(client)) {
-					if(nachricht.startsWith("@")) {
-						for(Socket clients : logged.keySet()) {
-							String clientname =nachricht.split(" ")[0].substring(1);
-							if(logged.get(clients).equalsIgnoreCase(clientname)) {
-								sendToClient(nachricht, client, clients);								
+						if(!nachricht.startsWith("login;")){
+							if(nachricht.startsWith("@")) {
+								for(Socket clients : logged.keySet()) {
+									String clientname =nachricht.split(" ")[0].substring(1);
+									if(logged.get(clients).equalsIgnoreCase(clientname)) {
+										sendToClient(nachricht, client, clients);								
+									}
+		
+								}
+							}else {
+								sendToAllClient(nachricht,client);
 							}
-
+							
 						}
-					}else {
-						sendToAllClient(nachricht,client);
-					}
 					}else {
 						if(nachricht.startsWith("login;")) {
 							String msg = nachricht.substring(6, nachricht.length());
